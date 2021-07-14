@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#2196f3">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="msapplication-tap-highlight" content="no">
+  <link rel="shortcut icon" href="#">
+
+  <link rel="stylesheet" href="framework7/css/framework7.min.css">
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="components/loader.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/framework7-icons.css" />
+  <script>
+    document.addEventListener("deviceready", onDeviceReady(), false);
+
+    function onDeviceReady() {
+      console.log("Calling onDeviceReady()");
+    }
+  </script>
+</head>
+
+<body>
+  <div id="app">
+    <!-- Status bar overlay for fullscreen mode-->
+    <div class="statusbar"></div>
+
+    <!-- Your main view, should have "view-main" class -->
+    <div class="view view-main ios-edges">
+      <!-- Page, data-name contains page name which can be used in callbacks -->
+      <div class="page" data-name="home">
+        <!-- Top Navbar -->
+        <div class="navbar">
+          <div class="navbar-inner">
+            <div class="title sliding">PDF reader</div>
+          </div>
+        </div>
+
+        <!-- Scrollable page content-->
+        <div class="page-content">
+          <div class="block block-strong">
+            <div id="thumbnails">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Popup -->
+    <div class="popup" id="pdf-popup">
+      <div class="view">
+        <div class="page">
+
+          <div class="page-content display-flex flex-direction-column justify-content-center">
+            <div class="block">
+              <div>
+                <div class="row margin-bottom">
+                  <a id="prev" class="link icon-only col-40" href="#">
+                    <i class="f7-icons">arrow_left</i>
+                  </a>
+                  <div class="col-20 display-flex flex-direction-column justify-content-center">
+                    <span>Page: <span id="page_num"></span> / <span id="page_count"></span></span>
+                  </div>
+                  <a id="next" class="link icon-only col-40" href="#">
+                    <i class="f7-icons">arrow_right</i>
+                  </a>
+                </div>
+              </div>
+              <canvas id="pdf-canvas" class="margin-bottom"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="pdfjs/build/pdf.js"></script>
+  <!-- Framework7 library -->
+  <script src="framework7/js/framework7.min.js"></script>
+  <!-- Monaca JS library -->
+  <script src="components/loader.js"></script>
+  <!-- App routes -->
+  <script src="js/routes.js"></script>
+  <!-- Your custom app scripts -->
+  <script src="js/app.js"></script>
+  <script src="js/pdf-reader.js"></script>
+
+</body>
+
+</html>

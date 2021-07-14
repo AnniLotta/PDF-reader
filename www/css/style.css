@@ -1,0 +1,29 @@
+#thumbnails {
+    display: flex;
+}
+
+.thumbnail {
+    margin: 2%;
+}
+
+.thumbnail-img {
+    border-style: solid;
+    border-width: 1px;
+    border-color: lightgrey;
+    height: 200px;
+    width: auto;
+}
+
+.thumbnail-txt {
+    text-align: center;
+    line-height: 0.5em;
+}
+
+.thumbnail-info {
+    color: silver;
+}
+
+#pdf-canvas {
+    border: 1px solid black;
+    direction: ltr;
+}
