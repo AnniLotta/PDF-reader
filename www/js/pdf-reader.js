@@ -6,97 +6,113 @@ pdfjsLib.workerSrc = '/../pdfjs/build/pdf.worker.js';
 const PDF_FILES_DIRECTORY = "../sampleFiles/";
 files = ['samplePDF1.pdf', 'samplePDF2.pdf', 'samplePDF3.pdf', 'samplePDF4.pdf', 'samplefile_with_a_long_filename.pdf'];
 
-  //                                      //
- //  Creating thumbnails for every PDF   //
-//                                      //
+function main() {
+    //Create a thumbnail to each PDF
+    createThumbnails();
+    //Register events for opening PDFs and navigating on their pages
+    registerEvents();
+}
+main();
 
-//When the application is opened, creates the thumbnails for every file and render them on the main page//
-for (let fileIdx = 0; fileIdx < files.length; fileIdx++) {
-    //Create a canvas for the file
-    document.getElementById('thumbnails').innerHTML += `<canvas id="canvas${fileIdx}"></canvas>`;
+//When the application is opened, creates the thumbnails for every file and renders them on the main page
+function createThumbnails() {
+    for (let fileIdx = 0; fileIdx < files.length; fileIdx++) {
+        //Create a canvas for the file
+        document.getElementById('thumbnails').innerHTML += `<canvas id="canvas${fileIdx}"></canvas>`;
 
-    //Defines the file path and download the file
-    const filePath = PDF_FILES_DIRECTORY + files[fileIdx];
-    pdfjsLib.getDocument(filePath).promise.then(function (pdf) {
+        //Defines the file path and download the file
+        const filePath = PDF_FILES_DIRECTORY + files[fileIdx];
+        pdfjsLib.getDocument(filePath).promise.then(function (pdf) {
 
-        //Gets the title, date and filesize of the file
-        pdf.getMetadata().then(function (data) {
+            //Gets the title, date and filesize of the file
+            pdf.getMetadata().then(function (data) {
 
-            let title = data.info.Title;
-            if (title.length > 17) {
-                title = title.substr(0, 14) + '...';
-            }
-            let creationDate = data.info.CreationDate;
-            let filesize = data.contentLength;
-            creationDate = `${creationDate.substr(2, 4)}/${creationDate.substr(6, 2)}/${creationDate.substr(4, 2)}`
+                let title = data.info.Title;
+                if (title.length > 17) {
+                    title = title.substr(0, 14) + '...';
+                }
+                let creationDate = data.info.CreationDate;
+                let filesize = data.contentLength;
+                creationDate = `${creationDate.substr(2, 4)}/${creationDate.substr(6, 2)}/${creationDate.substr(4, 2)}`
 
-            //Gets the first page of the file
-            pdf.getPage(1).then(function (page) {
+                //Gets the first page of the file
+                pdf.getPage(1).then(function (page) {
 
-                //Defines the page rendering settings
-                let scale = 1;
-                let viewport = page.getViewport({ scale: scale });
-                let canvasElement = document.getElementById(`canvas${fileIdx}`);
-                let ctx = canvasElement.getContext('2d');
+                    //Defines the page rendering settings
+                    let scale = 1;
+                    let viewport = page.getViewport({ scale: scale });
+                    let canvasElement = document.getElementById(`canvas${fileIdx}`);
+                    let ctx = canvasElement.getContext('2d');
 
-                canvasElement.height = viewport.height;
-                canvasElement.width = viewport.width;
+                    canvasElement.height = viewport.height;
+                    canvasElement.width = viewport.width;
 
-                let renderContext = {
-                    canvasContext: ctx,
-                    viewport: viewport
-                };
+                    let renderContext = {
+                        canvasContext: ctx,
+                        viewport: viewport
+                    };
 
-                //Renders the page on the canvas
-                let renderTask = page.render(renderContext);
-                renderTask.promise.then(function () {
+                    //Renders the page on the canvas
+                    let renderTask = page.render(renderContext);
+                    renderTask.promise.then(function () {
 
-                    //Makes an image of the canvas and creates a thumbnail of it
-                    let imgSrc = canvasElement.toDataURL();
-                    let img =
-                        `<div class="thumbnail popup-open" data-popup="#pdf-popup" data-file-path="${filePath}">
-                            <img class="thumbnail-img" src="${imgSrc}"></img>
-                            <p class="thumbnail-title">${title}</p>
-                            <div class="thumbnail-txt">
-                                <p >${creationDate}</p>
-                                <p>${getFilesize(filesize)}</p>
-                            </div>
-                        </div>`;
-                    document.getElementById('thumbnails').innerHTML += img;
+                        //Makes an image of the canvas and creates a thumbnail of it
+                        let imgSrc = canvasElement.toDataURL();
+                        let img =
+                            `<div class="thumbnail popup-open" data-popup="#pdf-popup" data-file-path="${filePath}">
+                                <img class="thumbnail-img" src="${imgSrc}"></img>
+                                <p class="thumbnail-title">${title}</p>
+                                <div class="thumbnail-txt">
+                                    <p >${creationDate}</p>
+                                    <p>${getFilesize(filesize)}</p>
+                                </div>
+                            </div>`;
+                        document.getElementById('thumbnails').innerHTML += img;
 
-                    //Removes the canvas as it was used only for creating the thumbnail image
-                    document.getElementById(`canvas${fileIdx}`).remove();
+                        //Removes the canvas as it was used only for creating the thumbnail image
+                        document.getElementById(`canvas${fileIdx}`).remove();
+                    })
                 })
             })
         })
-    })
 
+    }
 }
 
-//Converts bytes into more readable form for filesize
-function getFilesize(bytes) {
-    let s = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB'];
-    let e = Math.floor(Math.log(bytes) / Math.log(1024));
-    return (bytes / Math.pow(1024, Math.floor(e))).toFixed(2) + " " + s[e];
+function registerEvents() {
+    //Detect clicks on thumbnails to open PDFs
+    detectThumbnailClicks();
+
+    //Detect clicks on the arrow buttons to change the page of the open PDF
+    detectArrowClicks();
+
+    //Canvas element that shows the PDF 
+    let canvasElem = document.getElementById('pdf-canvas');
+
+    //Detect swipes on the open PDF canvas to change pages
+    detectCanvasSwipes(canvasElem);
+
+    //Detects clicks on the open PDF canvas to change the page
+    canvasElem.addEventListener("click", function (e) {
+        clickOnCanvas(canvasElem, e);
+    });
 }
 
 //Detects a click on an thumbnail and opens the file
-$$(document).on("click", ".thumbnail", function () {
-    let filePath = $$(this).data("file-path");
-    const title = filePath.substr(PDF_FILES_DIRECTORY.length);
-    pdfjsLib.getDocument(filePath).promise.then(function (doc) {
-        pdfDoc = doc;
-        document.getElementById('page_count').textContent = pdfDoc.numPages;
-        // Initial/first page rendering
-        pageNum = 1;
-        renderPage(pageNum);
-        setArrows();
-    });
-})
-
-  //                    //
- //   Opening a PDF    //
-//                    //
+function detectThumbnailClicks() {
+    $$(document).on("click", ".thumbnail", function () {
+        let filePath = $$(this).data("file-path");
+        const title = filePath.substr(PDF_FILES_DIRECTORY.length);
+        pdfjsLib.getDocument(filePath).promise.then(function (doc) {
+            pdfDoc = doc;
+            document.getElementById('page_count').textContent = pdfDoc.numPages;
+            // Initial/first page rendering
+            pageNum = 1;
+            renderPage(pageNum);
+            setArrows();
+        });
+    })
+}
 
 //Variables for opening the PDF
 let pdfDoc = null,
@@ -109,11 +125,15 @@ function renderPage(num) {
     pageRendering = true;
     // Using promise to fetch the page
     pdfDoc.getPage(num).then(function (page) {
-        let canvas = document.getElementById('pdf-canvas');
-        let ctx = canvas.getContext('2d');
-        let scale = 1;
+        //Defines the page rendering settings
+        const canvas = document.getElementById('pdf-canvas');
+        const ctx = canvas.getContext('2d');
+        const scale = 1;
         let viewport = page.getViewport({ scale: scale });
+
+        //Fits the PDF to the page
         if (viewport.height < viewport.width) {
+            //If height > width, rotates the PDF 90 degrees
             viewport = page.getViewport({ scale: 600 / viewport.height, rotation: 90 });
         } else {
             viewport = page.getViewport({ scale: 600 / viewport.width });
@@ -126,8 +146,8 @@ function renderPage(num) {
             canvasContext: ctx,
             viewport: viewport
         };
+        
         let renderTask = page.render(renderContext);
-
         // Wait for rendering to finish
         renderTask.promise.then(function () {
             pageRendering = false;
@@ -153,32 +173,28 @@ function queueRenderPage(num) {
     }
 }
 
-  //                                  //
- //  Changing pages on the open PDF  //
-//                                  //
-
 //Detects clicks on the arrow buttons to change the page
-document.getElementById('prev').addEventListener('click', prevPage);
-document.getElementById('next').addEventListener('click', nextPage);
-
-//Canvas element that shows the PDF 
-let canvasElem = document.getElementById('pdf-canvas');
+function detectArrowClicks() {
+    document.getElementById('prev').addEventListener('click', function () {
+        changePage(-1);
+    });
+    document.getElementById('next').addEventListener('click', function () {
+        changePage(1);
+    });
+}
 
 //Uses Hammer for detecting swipes on the canvas to change the page
-var mc = new Hammer(canvasElem);
-mc.on("swipeleft swiperight", function (ev) {
-    const touch = ev.type;
-    if (touch === 'swiperight') {
-        prevPage();
-    } else if (touch === 'swipeleft') {
-        nextPage();
-    }
-});
-
-//Detects clicks on the canvas to change the page
-canvasElem.addEventListener("click", function (e) {
-    clickOnCanvas(canvasElem, e);
-});
+function detectCanvasSwipes(canvasElem) {
+    let mc = new Hammer(canvasElem);
+    mc.on("swipeleft swiperight", function (ev) {
+        const touch = ev.type;
+        if (touch === 'swiperight') {
+            changePage(-1);
+        } else if (touch === 'swipeleft') {
+            changePage(1);
+        }
+    });
+}
 
 //Detects clicks on the canvas and changes the page according to which side of the canvas was clicked
 function clickOnCanvas(canvas, event) {
@@ -187,30 +203,19 @@ function clickOnCanvas(canvas, event) {
     let x = event.clientX - rect.left;
     //If the click was on the left side -> previous page, on the right side -> next page
     if (x < rect.width / 2) {
-        prevPage();
+        changePage(-1);
     }
     else {
-        nextPage();
+        changePage(1);
     }
 }
 
-//Displays previous page
-function prevPage() {
-    if (pageNum <= 1) {
-        return;
-    }
-    pageNum--;
-    setArrows();
-    queueRenderPage(pageNum);
-}
-
-//Displays next page
-function nextPage() {
-    if (pageNum >= pdfDoc.numPages) {
-        return;
-    }
-    pageNum++;
-    setArrows();
+//Changes the page to the next page if num = 1 and to the previous page if num = -1
+function changePage(num) {
+    const newPage = pageNum + num;
+    if (newPage < 1 || newPage > pdfDoc.numPages) return;
+    pageNum = newPage;
+    setArrows(); //Hide and show arrow buttons according to the page number
     queueRenderPage(pageNum);
 }
 
@@ -231,4 +236,11 @@ function setArrows() {
         //If the the last page is shown, don't show the next-button
         nextIcon.style.display = "none";
     }
+}
+
+//Converts bytes into more readable form for filesize
+function getFilesize(bytes) {
+    let s = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB'];
+    let e = Math.floor(Math.log(bytes) / Math.log(1024));
+    return (bytes / Math.pow(1024, Math.floor(e))).toFixed(2) + " " + s[e];
 }
