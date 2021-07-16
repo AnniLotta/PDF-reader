@@ -17,13 +17,6 @@
   <link rel="stylesheet" href="components/loader.css">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/framework7-icons.css" />
-  <script>
-    document.addEventListener("deviceready", onDeviceReady(), false);
-
-    function onDeviceReady() {
-      console.log("Calling onDeviceReady()");
-    }
-  </script>
 </head>
 
 <body>
@@ -44,31 +37,39 @@
 
         <!-- Scrollable page content-->
         <div class="page-content">
-          <div class="block block-strong">
             <div id="thumbnails">
             </div>
-          </div>
         </div>
       </div>
     </div>
 
-    <!-- Popup -->
+    <!-- Popup for showing a PDF -->
     <div class="popup" id="pdf-popup">
       <div class="view">
         <div class="page">
-
+          <div id="popup-navbar" class="navbar">
+            <div class="navbar-bg"></div>
+            <div class="navbar-inner">
+              <div class="left">
+                <!-- Link to close popup -->
+                <a class="link icon-only popup-close" href="#">
+                  <i class="f7-icons">arrowtriangle_left</i>
+                </a>
+              </div>
+            </div>
+          </div>
           <div class="page-content display-flex flex-direction-column justify-content-center">
             <div class="block">
               <div>
                 <div class="row margin-bottom">
-                  <a id="prev" class="link icon-only col-40" href="#">
-                    <i class="f7-icons">arrow_left</i>
+                  <a id="prev" class="link icon-only col-10" href="#">
+                    <i id="prev-icon" class="f7-icons">arrow_left</i>
                   </a>
-                  <div class="col-20 display-flex flex-direction-column justify-content-center">
+                  <div class="col-80 display-flex flex-direction-column justify-content-center">
                     <span>Page: <span id="page_num"></span> / <span id="page_count"></span></span>
                   </div>
-                  <a id="next" class="link icon-only col-40" href="#">
-                    <i class="f7-icons">arrow_right</i>
+                  <a id="next" class="link icon-only col-10" href="#">
+                    <i id="next-icon" class="f7-icons">arrow_right</i>
                   </a>
                 </div>
               </div>
@@ -80,7 +81,10 @@
     </div>
   </div>
 
+  <!-- pdf.js library -->
   <script src="pdfjs/build/pdf.js"></script>
+  <!-- Hammer library, used for detecting swipes on the PDF canvas -->
+  <script src="https://hammerjs.github.io/dist/hammer.js"></script>
   <!-- Framework7 library -->
   <script src="framework7/js/framework7.min.js"></script>
   <!-- Monaca JS library -->
