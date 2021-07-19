@@ -7,6 +7,7 @@ A simple app for listing and reading PDFs.
 ## Installation and usage
 To install the program, use the following commands:
 ```
+npm install -g monaca
 git clone https://github.com/AnniLotta/PDF-reader.git
 cd PDF-reader
 npm install
@@ -24,4 +25,4 @@ All the shown PDF files are in the ```sampleFiles```-folder. To add a new file, 
 
 The application uses [PDF.js](https://github.com/mozilla/pdf.js) to show PDF files. PDF.js is a library that loads PDF-documents and renders them on an HTML canvas. 
 In PDF reader application, pdf.js is used to create a thumbnail for every PDF-file and to show the file when the thumbnail is clicked.
-More examples of using pdf.js [here](https://mozilla.github.io/pdf.js/examples/).
+More examples of using PDF.js [here](https://mozilla.github.io/pdf.js/examples/).
