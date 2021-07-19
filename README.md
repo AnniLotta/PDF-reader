@@ -1,4 +1,4 @@
-# PDF-reader
+# PDF reader
 
 A simple app for listing and reading PDFs.
 
@@ -22,6 +22,6 @@ All the shown PDF files are in the ```sampleFiles```-folder. To add a new file, 
 
 ## pdf.js
 
-The application uses [pdf.js](https://github.com/mozilla/pdf.js) to show PDF files. Pdf.js is a library that uses loads PDF-documents and renders them on an HTML canvas. 
-In PDF-reader, pdf.js is used to create a thumbnail for every PDF-file and to show the file when the thumbnail is clicked.
+The application uses [PDF.js](https://github.com/mozilla/pdf.js) to show PDF files. PDF.js is a library that loads PDF-documents and renders them on an HTML canvas. 
+In PDF reader application, pdf.js is used to create a thumbnail for every PDF-file and to show the file when the thumbnail is clicked.
 More examples of using pdf.js [here](https://mozilla.github.io/pdf.js/examples/).
