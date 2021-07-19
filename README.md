@@ -8,6 +8,7 @@ A simple app for listing and reading PDFs.
 To install the program, use the following commands:
 ```
 npm install -g monaca
+monaca login
 git clone https://github.com/AnniLotta/PDF-reader.git
 cd PDF-reader
 npm install
