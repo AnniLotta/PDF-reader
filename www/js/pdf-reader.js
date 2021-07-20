@@ -1,9 +1,9 @@
 //Sets up the pdf.js library
-pdfjsLib.GlobalWorkerOptions.workerSrc = '/../pdfjs/build/pdf.worker.js'
-pdfjsLib.workerSrc = '/../pdfjs/build/pdf.worker.js';
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'pdfjs/build/pdf.worker.js'
+pdfjsLib.workerSrc = 'pdfjs/build/pdf.worker.js';
 
 //Defines the directory and the names of the files that will be shown
-const PDF_FILES_DIRECTORY = "../sampleFiles/";
+const PDF_FILES_DIRECTORY = 'sampleFiles/';
 files = ['samplePDF1.pdf', 'samplePDF2.pdf', 'samplePDF3.pdf', 'samplePDF4.pdf', 'samplefile_with_a_long_filename.pdf'];
 
 function main() {
@@ -23,16 +23,15 @@ function createThumbnails() {
         //Defines the file path and download the file
         const filePath = PDF_FILES_DIRECTORY + files[fileIdx];
         pdfjsLib.getDocument(filePath).promise.then(function (pdf) {
-
             //Gets the title, date and filesize of the file
             pdf.getMetadata().then(function (data) {
-
                 let title = data.info.Title;
                 if (title.length > 17) {
                     title = title.substr(0, 14) + '...';
                 }
                 let creationDate = data.info.CreationDate;
-                let filesize = data.contentLength;
+                let filesize = '';
+                if(data.contentLength) filesize = getFilesize(data.contentLength);
                 creationDate = `${creationDate.substr(2, 4)}/${creationDate.substr(6, 2)}/${creationDate.substr(4, 2)}`
 
                 //Gets the first page of the file
@@ -55,7 +54,6 @@ function createThumbnails() {
                     //Renders the page on the canvas
                     let renderTask = page.render(renderContext);
                     renderTask.promise.then(function () {
-
                         //Makes an image of the canvas and creates a thumbnail of it
                         let imgSrc = canvasElement.toDataURL();
                         let img =
@@ -64,7 +62,7 @@ function createThumbnails() {
                                 <p class="thumbnail-title">${title}</p>
                                 <div class="thumbnail-txt">
                                     <p >${creationDate}</p>
-                                    <p>${getFilesize(filesize)}</p>
+                                    <p>${filesize}</p>
                                 </div>
                             </div>`;
                         document.getElementById('thumbnails').innerHTML += img;
@@ -133,7 +131,7 @@ function renderPage(num) {
 
         //Fits the PDF to the page
         if (viewport.height < viewport.width) {
-            //If height > width, rotates the PDF 90 degrees
+            //If height < width, rotates the PDF 90 degrees
             viewport = page.getViewport({ scale: 600 / viewport.height, rotation: 90 });
         } else {
             viewport = page.getViewport({ scale: 600 / viewport.width });
