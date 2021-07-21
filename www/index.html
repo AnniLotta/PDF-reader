@@ -12,7 +12,7 @@
   <meta name="msapplication-tap-highlight" content="no">
   <link rel="shortcut icon" href="#">
 
-  <link rel="stylesheet" href="framework7/css/framework7.min.css">
+  <link rel="stylesheet" href="framework7/framework7-bundle.min.css">
   <link rel="stylesheet" href="css/app.css">
   <link rel="stylesheet" href="components/loader.css">
   <link rel="stylesheet" href="css/framework7-icons.css" />
@@ -29,6 +29,7 @@
       <div class="page" data-name="home">
         <!-- Top Navbar -->
         <div class="navbar">
+          <div class="navbar-bg"></div>
           <div class="navbar-inner">
             <div class="title sliding">PDF reader</div>
           </div>
@@ -46,7 +47,7 @@
     <div class="popup" id="pdf-popup">
       <div class="view">
         <div class="page">
-          <div id="popup-navbar" class="navbar">
+          <div class="navbar">
             <div class="navbar-bg"></div>
             <div class="navbar-inner">
               <div class="left">
@@ -57,17 +58,17 @@
               </div>
             </div>
           </div>
-          <div class="page-content display-flex flex-direction-column justify-content-center">
+          <div class="page-content justify-content-center">
             <div class="block">
               <div>
                 <div class="row margin-bottom">
-                  <a id="prev" class="link icon-only col-10" href="#">
+                  <a id="prev" class="link icon-only col-30" href="#">
                     <i id="prev-icon" class="f7-icons">arrow_left</i>
                   </a>
-                  <div class="col-80 display-flex flex-direction-column justify-content-center">
+                  <div class="col-40" id="page-counter">
                     <span>Page: <span id="page_num"></span> / <span id="page_count"></span></span>
                   </div>
-                  <a id="next" class="link icon-only col-10" href="#">
+                  <a id="next" class="link icon-only col-30" href="#">
                     <i id="next-icon" class="f7-icons">arrow_right</i>
                   </a>
                 </div>
@@ -85,7 +86,7 @@
   <!-- Hammer library, used for detecting swipes on the PDF canvas -->
   <script src="https://hammerjs.github.io/dist/hammer.js"></script>
   <!-- Framework7 library -->
-  <script src="framework7/js/framework7.min.js"></script>
+  <script type="text/javascript" src="framework7/framework7-bundle.min.js"></script>
   <!-- Monaca JS library -->
   <script src="components/loader.js"></script>
   <!-- App routes -->

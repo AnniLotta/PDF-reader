@@ -3,11 +3,13 @@ let $$ = Dom7;
 
 // Framework7 App main instance
 let app = new Framework7({
-  root: '#app', // App root element
-  id: 'io.framework7.testapp', // App bundle ID
-  name: 'Framework7', // App name
-  theme: 'auto', // Automatic theme detection
+  el: '#app', // App root element
+  name: 'PDF reader', // App name
+  id: 'PDFreader',
   // App root data
+  statusbar: {
+    enabled: false,
+  },
   data: function () {
     return {
     };
@@ -21,6 +23,4 @@ let app = new Framework7({
 });
 
 // Init/Create main view
-let mainView = app.views.create('.view-main', {
-  url: '/'
-});
+let mainView = app.views.create('.view-main');
