@@ -1,10 +1,20 @@
-//Sets up the pdf.js library
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'pdfjs/build/pdf.worker.js'
-pdfjsLib.workerSrc = 'pdfjs/build/pdf.worker.js';
-
 //Defines the directory and the names of the files that will be shown
 const PDF_FILES_DIRECTORY = 'sampleFiles/';
 files = ['samplePDF1.pdf', 'samplePDF2.pdf', 'samplePDF3.pdf', 'samplePDF4.pdf', 'samplefile_with_a_long_filename.pdf'];
+
+//Tries to set up the PDF.js library
+let pdfjsDefined = true;
+try {
+    //Sets up the PDF.js library
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'pdfjs/build/pdf.worker.js'
+    pdfjsLib.workerSrc = 'pdfjs/build/pdf.worker.js';
+} catch (e) {
+    pdfjsDefined = false;
+    document.getElementById('thumbnails').innerText = 'This browser/platform does not support PDF.js.'
+}
+
+//Run the main function
+if (pdfjsDefined) main();
 
 function main() {
     //Create a thumbnail to each PDF
@@ -12,7 +22,6 @@ function main() {
     //Register events for opening PDFs and navigating on their pages
     registerEvents();
 }
-main();
 
 //When the application is opened, creates the thumbnails for every file and renders them on the main page
 function createThumbnails() {
@@ -31,7 +40,7 @@ function createThumbnails() {
                 }
                 let creationDate = data.info.CreationDate;
                 let filesize = '';
-                if(data.contentLength) filesize = getFilesize(data.contentLength);
+                if (data.contentLength) filesize = getFilesize(data.contentLength);
                 creationDate = `${creationDate.substr(2, 4)}/${creationDate.substr(6, 2)}/${creationDate.substr(4, 2)}`
 
                 //Gets the first page of the file
@@ -144,7 +153,7 @@ function renderPage(num) {
             canvasContext: ctx,
             viewport: viewport
         };
-        
+
         let renderTask = page.render(renderContext);
         // Wait for rendering to finish
         renderTask.promise.then(function () {
