@@ -27,3 +27,7 @@ All the shown PDF files are in the ```sampleFiles```-folder. To add a new file, 
 The application uses [PDF.js](https://github.com/mozilla/pdf.js) to show PDF files. PDF.js is a library that loads PDF-documents and renders them on an HTML canvas. 
 In PDF reader application, pdf.js is used to create a thumbnail for every PDF-file and to show the file when the thumbnail is clicked.
 More examples of using PDF.js [here](https://mozilla.github.io/pdf.js/examples/).
+
+## Tutorial
+
+- [Step-by-step tutorial](https://medium.com/the-web-tub/creating-a-pdf-reader-application-with-monaca-and-pdf-js-bd3d962bfaa6)
