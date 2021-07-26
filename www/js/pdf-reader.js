@@ -2,6 +2,12 @@
 const PDF_FILES_DIRECTORY = 'sampleFiles/';
 files = ['samplePDF1.pdf', 'samplePDF2.pdf', 'samplePDF3.pdf', 'samplePDF4.pdf', 'samplefile_with_a_long_filename.pdf'];
 
+//Variables for opening the PDF
+let pdfDoc = null,
+    pageNum = 1,
+    pageRendering = false,
+    pageNumPending = null;
+
 //Tries to set up the PDF.js library
 let pdfjsDefined = true;
 try {
@@ -11,16 +17,6 @@ try {
 } catch (e) {
     pdfjsDefined = false;
     document.getElementById('thumbnails').innerText = 'This browser/platform does not support PDF.js.'
-}
-
-//Run the main function
-if (pdfjsDefined) main();
-
-function main() {
-    //Create a thumbnail to each PDF
-    createThumbnails();
-    //Register events for opening PDFs and navigating on their pages
-    registerEvents();
 }
 
 //When the application is opened, creates the thumbnails for every file and renders them on the main page
@@ -128,12 +124,6 @@ function detectThumbnailClicks() {
         });
     })
 }
-
-//Variables for opening the PDF
-let pdfDoc = null,
-    pageNum = 1,
-    pageRendering = false,
-    pageNumPending = null;
 
 //Gets page info from a document, resizes the canvas accordingly and renders the page.
 async function renderPage(num) {
@@ -258,3 +248,13 @@ function getFilesize(bytes) {
     let e = Math.floor(Math.log(bytes) / Math.log(1024));
     return (bytes / Math.pow(1024, Math.floor(e))).toFixed(2) + " " + s[e];
 }
+
+function main() {
+    //Create a thumbnail to each PDF
+    createThumbnails();
+    //Register events for opening PDFs and navigating on their pages
+    registerEvents();
+}
+
+//Run the main function
+if (pdfjsDefined) main();
