@@ -24,66 +24,68 @@ function main() {
 }
 
 //When the application is opened, creates the thumbnails for every file and renders them on the main page
-function createThumbnails() {
+async function createThumbnails() {
+    //Hide thumbnails to show all of them at the same time and display loading icon
+    document.getElementById('thumbnails').style.visibility = "hidden";
+    document.getElementById('loading').style.display = "block";
     for (let fileIdx = 0; fileIdx < files.length; fileIdx++) {
         //Create a canvas for the file
-        document.getElementById('thumbnails').innerHTML += `<canvas id="canvas${fileIdx}"></canvas>`;
+        document.getElementById('thumbnails').innerHTML += `<canvas class="tempcanvas" id="canvas${fileIdx}"></canvas>`;
 
         //Defines the file path and download the file
         const filePath = PDF_FILES_DIRECTORY + files[fileIdx];
-        pdfjsLib.getDocument(filePath).promise.then(function (pdf) {
-            //Gets the title, date and filesize of the file
-            pdf.getMetadata().then(function (data) {
-                let title = data.info.Title;
-                if (title.length > 17) {
-                    title = title.substr(0, 14) + '...';
-                }
-                let creationDate = data.info.CreationDate;
-                let filesize = '';
-                if (data.contentLength) filesize = getFilesize(data.contentLength);
-                creationDate = `${creationDate.substr(2, 4)}/${creationDate.substr(6, 2)}/${creationDate.substr(4, 2)}`
 
-                //Gets the first page of the file
-                pdf.getPage(1).then(function (page) {
+        let pdf = await pdfjsLib.getDocument(filePath).promise;
+        //Gets the title, date and filesize of the file
+        let data = await pdf.getMetadata();
+        let title = data.info.Title;
+        if (title.length > 17) {
+            title = title.substr(0, 14) + '...';
+        }
+        let creationDate = data.info.CreationDate;
+        let filesize = '';
+        if (data.contentLength) filesize = getFilesize(data.contentLength);
+        creationDate = `${creationDate.substr(2, 4)}/${creationDate.substr(6, 2)}/${creationDate.substr(4, 2)}`
 
-                    //Defines the page rendering settings
-                    let scale = 1;
-                    let viewport = page.getViewport({ scale: scale });
-                    let canvasElement = document.getElementById(`canvas${fileIdx}`);
-                    let ctx = canvasElement.getContext('2d');
+        //Gets the first page of the file
+        let page = await pdf.getPage(1);
 
-                    canvasElement.height = viewport.height;
-                    canvasElement.width = viewport.width;
+        //Defines the page rendering settings
+        let scale = 1;
+        let viewport = page.getViewport({ scale: scale });
+        let canvasElement = document.getElementById(`canvas${fileIdx}`);
+        let ctx = canvasElement.getContext('2d');
 
-                    let renderContext = {
-                        canvasContext: ctx,
-                        viewport: viewport
-                    };
+        //Sets canvas dimensions
+        canvasElement.height = viewport.height;
+        canvasElement.width = viewport.width;
 
-                    //Renders the page on the canvas
-                    let renderTask = page.render(renderContext);
-                    renderTask.promise.then(function () {
-                        //Makes an image of the canvas and creates a thumbnail of it
-                        let imgSrc = canvasElement.toDataURL();
-                        let img =
-                            `<div class="thumbnail popup-open" data-popup="#pdf-popup" data-file-path="${filePath}">
-                                <img class="thumbnail-img" src="${imgSrc}"></img>
-                                <p class="thumbnail-title">${title}</p>
-                                <div class="thumbnail-txt">
-                                    <p >${creationDate}</p>
-                                    <p>${filesize}</p>
-                                </div>
-                            </div>`;
-                        document.getElementById('thumbnails').innerHTML += img;
+        let renderContext = {
+            canvasContext: ctx,
+            viewport: viewport
+        };
 
-                        //Removes the canvas as it was used only for creating the thumbnail image
-                        document.getElementById(`canvas${fileIdx}`).remove();
-                    })
-                })
-            })
-        })
+        //Renders the page on the canvas
+        await page.render(renderContext).promise;
+        //Makes an image of the canvas and creates a thumbnail of it
+        let imgSrc = canvasElement.toDataURL();
+        let img =
+            `<div class="thumbnail popup-open" data-popup="#pdf-popup" data-file-path="${filePath}">
+                        <img class="thumbnail-img" src="${imgSrc}"></img>
+                        <p class="thumbnail-title">${title}</p>
+                        <div class="thumbnail-txt">
+                            <p >${creationDate}</p>
+                            <p>${filesize}</p>
+                        </div>
+                    </div>`;
+        document.getElementById('thumbnails').innerHTML += img;
 
+        //Removes the canvas as it was used only for creating the thumbnail image
+        document.getElementById(`canvas${fileIdx}`).remove();
     }
+    //Hide the loading icon and show the thumbnails
+    document.getElementById('loading').style.display = "none";
+    document.getElementById('thumbnails').style.visibility = "visible";
 }
 
 function registerEvents() {
@@ -109,7 +111,13 @@ function registerEvents() {
 function detectThumbnailClicks() {
     $$(document).on("click", ".thumbnail", function () {
         let filePath = $$(this).data("file-path");
-        const title = filePath.substr(PDF_FILES_DIRECTORY.length);
+
+        //Empties the canvas before new rendering
+        const canvas = document.getElementById('pdf-canvas');
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        //Loads the file and renders the first page
         pdfjsLib.getDocument(filePath).promise.then(function (doc) {
             pdfDoc = doc;
             document.getElementById('page_count').textContent = pdfDoc.numPages;
@@ -128,43 +136,42 @@ let pdfDoc = null,
     pageNumPending = null;
 
 //Gets page info from a document, resizes the canvas accordingly and renders the page.
-function renderPage(num) {
+async function renderPage(num) {
     pageRendering = true;
     // Using promise to fetch the page
-    pdfDoc.getPage(num).then(function (page) {
-        //Defines the page rendering settings
-        const canvas = document.getElementById('pdf-canvas');
-        const ctx = canvas.getContext('2d');
-        const scale = 1;
-        let viewport = page.getViewport({ scale: scale });
+    let page = await pdfDoc.getPage(num);
+    //Defines the page rendering settings
+    const canvas = document.getElementById('pdf-canvas');
+    const ctx = canvas.getContext('2d');
+    const scale = 1;
+    let viewport = page.getViewport({ scale: scale });
 
-        //Fits the PDF to the page
-        if (viewport.height < viewport.width) {
-            //If height < width, rotates the PDF 90 degrees
-            viewport = page.getViewport({ scale: 600 / viewport.height, rotation: 90 });
-        } else {
-            viewport = page.getViewport({ scale: 600 / viewport.width });
-        }
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
+    //Fits the PDF to the page
+    if (viewport.height < viewport.width) {
+        //If height < width, rotates the PDF 90 degrees
+        viewport = page.getViewport({ scale: 600 / viewport.height, rotation: 90 });
+    } else {
+        viewport = page.getViewport({ scale: 600 / viewport.width });
+    }
+    canvas.height = viewport.height;
+    canvas.width = viewport.width;
 
-        // Render PDF page into canvas context
-        let renderContext = {
-            canvasContext: ctx,
-            viewport: viewport
-        };
+    // Render PDF page into canvas context
+    let renderContext = {
+        canvasContext: ctx,
+        viewport: viewport
+    };
 
-        let renderTask = page.render(renderContext);
-        // Wait for rendering to finish
-        renderTask.promise.then(function () {
-            pageRendering = false;
-            if (pageNumPending !== null) {
-                // New page rendering is pending
-                renderPage(pageNumPending);
-                pageNumPending = null;
-            }
-        });
-    });
+    // Wait for rendering to finish
+    await page.render(renderContext);
+
+    //Renders the next page on the rendering queue
+    pageRendering = false;
+    if (pageNumPending !== null) {
+        // New page rendering is pending
+        renderPage(pageNumPending);
+        pageNumPending = null;
+    }
 
     // Update page counters
     document.getElementById('page_num').textContent = num;

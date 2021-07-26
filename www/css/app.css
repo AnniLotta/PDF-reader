@@ -40,6 +40,10 @@
     overflow: scroll;
 }
 
+.tempcanvas {
+    display: none;
+}
+
 #prev-icon {
     display: none;
 }
