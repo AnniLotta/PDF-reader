@@ -12,10 +12,10 @@
   <meta name="msapplication-tap-highlight" content="no">
   <link rel="shortcut icon" href="#">
 
+  <link rel="stylesheet" href="css/framework7-icons.css"/>
   <link rel="stylesheet" href="framework7/framework7-bundle.min.css">
   <link rel="stylesheet" href="css/app.css">
   <link rel="stylesheet" href="components/loader.css">
-  <link rel="stylesheet" href="css/framework7-icons.css" />
 </head>
 
 <body>
@@ -64,7 +64,7 @@
               <div class="left">
                 <!-- Link to close popup -->
                 <a class="link icon-only popup-close" href="#">
-                  <i class="f7-icons">arrowtriangle_left</i>
+                  <i class="f7-icons">chevron_left</i>
                 </a>
               </div>
             </div>
@@ -85,6 +85,14 @@
                 </div>
               </div>
               <canvas id="pdf-canvas" class="margin-bottom"></canvas>
+              <div id="zoom-buttons">
+                <a id="plus" class="link icon-only" href="#" onclick="zoom(true)">
+                  <i id="plus-icon" class="icon f7-icons">plus</i>
+                </a>
+                <a id="minus" class="link icon-only" href="#" onclick="zoom(false)">
+                  <i id="minus-icon" class="icon f7-icons">minus</i>
+                </a>
+              </div>
             </div>
           </div>
         </div>

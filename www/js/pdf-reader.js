@@ -2,12 +2,6 @@
 const PDF_FILES_DIRECTORY = 'sampleFiles/';
 files = ['samplePDF1.pdf', 'samplePDF2.pdf', 'samplePDF3.pdf', 'samplePDF4.pdf', 'samplefile_with_a_long_filename.pdf'];
 
-//Variables for opening the PDF
-let pdfDoc = null,
-    pageNum = 1,
-    pageRendering = false,
-    pageNumPending = null;
-
 //Tries to set up the PDF.js library
 let pdfjsDefined = true;
 try {
@@ -18,6 +12,22 @@ try {
     pdfjsDefined = false;
     document.getElementById('thumbnails').innerText = 'This browser/platform does not support PDF.js.'
 }
+
+//Variables for opening a PDF
+let pdfDoc = null,
+    pageNum = 1,                //The number of the open page of the open file
+    pageRendering = false,      //Is there a page rendering process ongoing
+    pageNumPending = null;      //Page that's in the rendering queue
+
+//Variables for zooming the currently open page and moving it around
+let moveXAmount = 0,            //How much a page is moved horizontally on the canvas 
+    moveYAmount = 0,            //How much a page is moved vertically on the canvas 
+    pageImage = new Image(),    //The currently open page as an image
+    prevDeltaX = 0,             //The previous horizontal movement of the page when dragging it around
+    prevDeltaY = 0,             //The previous vertical movement of the page when dragging it around
+    pageScale = 1;              //The scale of the currently open page, 1 => fully zoomed out
+
+const pdfCanvas = document.getElementById("pdf-canvas"); //The canvas where the pages are drawn
 
 //When the application is opened, creates the thumbnails for every file and renders them on the main page
 async function createThumbnails() {
@@ -47,8 +57,7 @@ async function createThumbnails() {
         let page = await pdf.getPage(1);
 
         //Defines the page rendering settings
-        let scale = 1;
-        let viewport = page.getViewport({ scale: scale });
+        let viewport = page.getViewport({ scale: 1 });
         let canvasElement = document.getElementById(`canvas${fileIdx}`);
         let ctx = canvasElement.getContext('2d');
 
@@ -70,7 +79,7 @@ async function createThumbnails() {
                         <img class="thumbnail-img" src="${imgSrc}"></img>
                         <p class="thumbnail-title">${title}</p>
                         <div class="thumbnail-txt">
-                            <p >${creationDate}</p>
+                            <p>${creationDate}</p>
                             <p>${filesize}</p>
                         </div>
                     </div>`;
@@ -91,16 +100,8 @@ function registerEvents() {
     //Detect clicks on the arrow buttons to change the page of the open PDF
     detectArrowClicks();
 
-    //Canvas element that shows the PDF 
-    let canvasElem = document.getElementById('pdf-canvas');
-
     //Detect swipes on the open PDF canvas to change pages
-    detectCanvasSwipes(canvasElem);
-
-    //Detects clicks on the open PDF canvas to change the page
-    canvasElem.addEventListener("click", function (e) {
-        clickOnCanvas(canvasElem, e);
-    });
+    detectCanvasGestures();
 }
 
 //Detects a click on an thumbnail and opens the file
@@ -109,9 +110,8 @@ function detectThumbnailClicks() {
         let filePath = $$(this).data("file-path");
 
         //Empties the canvas before new rendering
-        const canvas = document.getElementById('pdf-canvas');
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const ctx = pdfCanvas.getContext('2d');
+        ctx.clearRect(0, 0, pdfCanvas.width, pdfCanvas.height);
 
         //Loads the file and renders the first page
         pdfjsLib.getDocument(filePath).promise.then(function (doc) {
@@ -127,14 +127,16 @@ function detectThumbnailClicks() {
 
 //Gets page info from a document, resizes the canvas accordingly and renders the page.
 async function renderPage(num) {
+
+    zoom(true, true); //Resets the zoom
     pageRendering = true;
-    // Using promise to fetch the page
+
+    // Using a promise to fetch the page
     let page = await pdfDoc.getPage(num);
+
     //Defines the page rendering settings
-    const canvas = document.getElementById('pdf-canvas');
-    const ctx = canvas.getContext('2d');
-    const scale = 1;
-    let viewport = page.getViewport({ scale: scale });
+    const ctx = pdfCanvas.getContext('2d');
+    let viewport = page.getViewport({ scale: 1 });
 
     //Fits the PDF to the page
     if (viewport.height < viewport.width) {
@@ -143,28 +145,31 @@ async function renderPage(num) {
     } else {
         viewport = page.getViewport({ scale: 600 / viewport.width });
     }
-    canvas.height = viewport.height;
-    canvas.width = viewport.width;
+    pdfCanvas.height = viewport.height;
+    pdfCanvas.width = viewport.width;
 
-    // Render PDF page into canvas context
+    // Set the render context for the PDF
     let renderContext = {
         canvasContext: ctx,
         viewport: viewport
     };
 
     // Wait for rendering to finish
-    await page.render(renderContext);
+    await page.render(renderContext).promise;
+    pageRendering = false;
 
     //Renders the next page on the rendering queue
-    pageRendering = false;
     if (pageNumPending !== null) {
         // New page rendering is pending
         renderPage(pageNumPending);
         pageNumPending = null;
     }
 
-    // Update page counters
+    // Update the page counter
     document.getElementById('page_num').textContent = num;
+
+    //Sets the source for the image that is used when a page is zoomed and moved
+    pageImage.src = pdfCanvas.toDataURL();
 }
 
 /*If another page rendering in progress, waits until the rendering is finished. 
@@ -188,30 +193,80 @@ function detectArrowClicks() {
 }
 
 //Uses Hammer for detecting swipes on the canvas to change the page
-function detectCanvasSwipes(canvasElem) {
-    let mc = new Hammer(canvasElem);
-    mc.on("swipeleft swiperight", function (ev) {
-        const touch = ev.type;
-        if (touch === 'swiperight') {
-            changePage(-1);
-        } else if (touch === 'swipeleft') {
-            changePage(1);
+function detectCanvasGestures() {
+
+    let mc = new Hammer(pdfCanvas);
+    //Enables pinches on the canvas
+    mc.get('pinch').set({
+        enable: true
+    });
+
+    mc.on("swipeleft swiperight pinch pinchend pan tap", function (e) {
+        switch (e.type) {
+            case 'swiperight': //Changes to the previous page when swiped right
+                if (pageScale === 1) changePage(-1);
+                break;
+            case 'swipeleft': //Changes to the next page when swiped left
+                if (pageScale === 1) changePage(1);
+                break;
+
+            case 'pinch': //Zooms in and out when pinched
+                pdfCanvas.style.transform = `scale(${restrictZoom(e.scale * pageScale)})`;
+                setArrows(true); //Hides the arrow buttons when the canvas is zoomed
+                break;
+            case 'pinchend': //Sets the canvas scaling when pinching ends
+                pageScale = restrictZoom(e.scale * pageScale);
+                if (pageScale === 1) buildcanvas(); //If the page is fully zoomed out, sets it back to the center of the canvas
+                break;
+
+            case 'pan': //Moves the page on the canvas when zoomed in and dragged
+                if (pageScale > 1 && !(prevDeltaX === e.deltaX && prevDeltaY === e.deltaY)) {
+                    moveXAmount -= prevDeltaX - e.deltaX;
+                    moveYAmount -= prevDeltaY - e.deltaY;
+                    buildcanvas();
+                }
+                //Saves the new changes for the next pan event
+                prevDeltaX = e.deltaX;
+                prevDeltaY = e.deltaY;
+                if (e.isFinal) { //If it's the last pan of the dragging, resets the change variables
+                    prevDeltaX = 0;
+                    prevDeltaY = 0;
+                }
+                break;
+
+            case 'tap': //Changes the page when its sides are clicked/tapped
+                //If the click was on the left side -> previous page, on the right side -> next page
+                if (e.center.x < pdfCanvas.width / 2) {
+                    changePage(-1);
+                }
+                else {
+                    changePage(1);
+                }
+                break;
         }
     });
 }
 
-//Detects clicks on the canvas and changes the page according to which side of the canvas was clicked
-function clickOnCanvas(canvas, event) {
-    //Gets the x-coordinate of the click
-    let rect = canvas.getBoundingClientRect();
-    let x = event.clientX - rect.left;
-    //If the click was on the left side -> previous page, on the right side -> next page
-    if (x < rect.width / 2) {
-        changePage(-1);
+//Zooms in and out when the zoom buttons are used
+function zoom(isIn, fullOut) {
+
+    if (fullOut) {
+        pageScale = 1;
+    } else {
+        isIn ? pageScale = restrictZoom(pageScale *= 1.10) : pageScale = restrictZoom(pageScale *= 0.90);
     }
-    else {
-        changePage(1);
-    }
+
+    pdfCanvas.style.transform = `scale(${pageScale})`;
+    setArrows(true); //Hides the arrow buttons when zoomed
+    if (pageScale === 1) buildcanvas(); //Resets the page location if the scale is 1
+}
+
+//Restricts the zoom so that it doesn't zoom too far or close
+function restrictZoom(zoom) {
+    let newZoom = zoom;
+    if (zoom <= 1) newZoom = 1;
+    else if (zoom > 8) newZoom = 8;
+    return newZoom;
 }
 
 //Changes the page to the next page if num = 1 and to the previous page if num = -1
@@ -224,13 +279,13 @@ function changePage(num) {
 }
 
 //Shows and hides the arrow buttons according to the page number
-function setArrows() {
+function setArrows(hideAll) {
     let nextIcon = document.getElementById("next-icon");
     let prevIcon = document.getElementById("prev-icon");
     nextIcon.style.display = "block";
     prevIcon.style.display = "block";
     //If the file has only one page, don't show buttons
-    if (pdfDoc.numPages === 1) {
+    if (pdfDoc.numPages === 1 || hideAll) {
         nextIcon.style.display = "none";
         prevIcon.style.display = "none";
     } else if (pageNum <= 1) {
@@ -255,6 +310,25 @@ function main() {
     //Register events for opening PDFs and navigating on their pages
     registerEvents();
 }
+
+//Shows the correct part of the page when it is moved on the canvas
+function buildcanvas() {
+    let ctx = pdfCanvas.getContext('2d');
+
+    //Reset the page location if the page is fully zoomed out
+    if (pageScale === 1) {
+        moveXAmount = 0;
+        moveYAmount = 0;
+        setArrows();
+    }
+
+    //Clear the canvas and draw the new picture on it
+    ctx.clearRect(0, 0, pdfCanvas.width, pdfCanvas.height);
+    ctx.save();
+    ctx.drawImage(pageImage, moveXAmount, moveYAmount);
+    ctx.restore();
+}
+
 
 //Run the main function
 if (pdfjsDefined) main();
